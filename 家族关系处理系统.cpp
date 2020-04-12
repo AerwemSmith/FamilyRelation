@@ -1,52 +1,142 @@
-TriTree *Create(DataType familyname[MAXNUM])/* ½¨Á¢¼Ò×å¹ØÏµ²¢´æÈëÎÄ¼ş*/
+#include <string.h>
+#include <malloc.h>
+#include<limits.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<io.h>
+#include<math.h>
+#include<process.h>
+#define TRUE 1
+#define FALSE 0
+#define OK 1
+#define ERROR -1
+#define INFEASIBLE -1
+typedef char DataType;
+#define MAXNUM 20
+typedef struct TriTNode/* æ ‘çš„ä¸‰å‰é“¾è¡¨å­˜å‚¨ç»“æ„*/
 {
-    int i=0;                  /* i¿ØÖÆfamilyÊı×éÏÂ±ê*/
-    DataType ch,str[MAXNUM];  /* ch´æ´¢ÊäÈëµÄy»òn£¬str´æ´¢ÊäÈëµÄ×Ö·û´®*/
+    DataType data[MAXNUM];
+    struct TriTNode *parent;/* åŒäº²*/
+    struct TriTNode *lchild;/* å·¦å­©å­*/
+    struct TriTNode *rchild;/* å³å­©å­*/
+} TriTree;
+typedef struct Node/* é˜Ÿåˆ—çš„ç»“ç‚¹ç»“æ„*/
+{
+    TriTree *info;
+    struct Node *next;
+} Node;
+typedef struct/* é“¾æ¥é˜Ÿåˆ—ç±»å‹å®šä¹‰*/
+{
+    struct Node *front;          /* å¤´æŒ‡é’ˆ*/
+    struct Node *rear;            /* å°¾æŒ‡é’ˆ*/
+} LinkQueue;
+DataType fname[MAXNUM],family[50][MAXNUM];/* å…¨å±€å˜é‡*/
+TriTree *Open(DataType familyname[MAXNUM]);
+TriTree *TriTreeCreate();
+void InOrder(TriTree *t);
+void PreOrder(TriTree *T);
+LinkQueue *LQueueCreateEmpty( )/* å»ºç«‹ä¸€ä¸ªç©ºé˜Ÿåˆ—*/
+{
+    LinkQueue *plqu=(LinkQueue *)malloc(sizeof(LinkQueue));
+    if (plqu!=NULL)
+        plqu->front=plqu->rear=NULL;
+    else
+    {
+        printf("å†…å­˜ä¸è¶³ï¼\n");
+        return NULL;
+    }
+    return plqu;
+}
+int LQueueIsEmpty(LinkQueue *plqu)/* åˆ¤æ–­é“¾æ¥è¡¨ç¤ºé˜Ÿåˆ—æ˜¯å¦ä¸ºç©ºé˜Ÿåˆ—*/
+{
+    return(plqu->front==NULL);
+}
+void LQueueEnQueue(LinkQueue *plqu,TriTree *x)/* è¿›é˜Ÿåˆ—*/
+{
+    Node *p=(Node *)malloc(sizeof(Node));
+    if(p==NULL)
+        printf("å†…å­˜åˆ†é…å¤±è´¥ï¼\n");
+    else
+    {
+        p->info=x;
+        p->next=NULL;
+        if(plqu->front==NULL)/* åŸæ¥ä¸ºç©ºé˜Ÿ*/
+            plqu->front=p;
+        else
+            plqu->rear->next=p;
+        plqu->rear=p;
+    }
+}
+int LQueueDeQueue(LinkQueue *plqu,TriTree *x)/* å‡ºé˜Ÿåˆ—*/
+{
+    Node *p;
+    if(plqu->front==NULL)
+    {
+        printf("é˜Ÿåˆ—ç©ºï¼\n");
+        return ERROR;
+    }
+    else
+    {
+        p=plqu->front;
+        x=p->info;
+        plqu->front=plqu->front->next;
+        free(p);
+        return OK;
+    }
+}
+TriTree *LQueueGetFront(LinkQueue *plqu)/* åœ¨éç©ºé˜Ÿåˆ—ä¸­æ±‚é˜Ÿå¤´å…ƒç´ */
+{
+    return(plqu->front->info);
+}
+TriTree *Create(DataType familyname[MAXNUM])/* å»ºç«‹å®¶æ—å…³ç³»å¹¶å­˜å…¥æ–‡ä»¶*/
+{
+    int i=0;                  /* iæ§åˆ¶familyæ•°ç»„ä¸‹æ ‡*/
+    DataType ch,str[MAXNUM];  /* chå­˜å‚¨è¾“å…¥çš„yæˆ–nï¼Œstrå­˜å‚¨è¾“å…¥çš„å­—ç¬¦ä¸²*/
     TriTree *t;
     FILE *fp;
-    strcpy(fname,familyname);  /* ÒÔ¼Ò×åÃûÎªÎÄ±¾ÎÄ¼şÃû´æ´¢*/
+    strcpy(fname,familyname);  /* ä»¥å®¶æ—åä¸ºæ–‡æœ¬æ–‡ä»¶åå­˜å‚¨*/
     strcat(fname,".txt");
-    fp=fopen(fname,"r");      /* ÒÔ¶ÁÈ¡·½Ê½´ò¿ªÎÄ¼ş*/
-    if(fp)                    /* ÎÄ¼şÒÑ´æÔÚ*/
+    fp=fopen(fname,"r");      /* ä»¥è¯»å–æ–¹å¼æ‰“å¼€æ–‡ä»¶*/
+    if(fp)                    /* æ–‡ä»¶å·²å­˜åœ¨*/
     {
         fclose(fp);
-        printf("%s µÄ¼Ò×å¹ØÏµÒÑ´æÔÚ£¡ÖØĞÂ½¨Á¢Çë°´¡°Y¡±,Ö±½Ó´ò¿ªÇë°´¡°N¡±\n",familyname);
+        printf("%s çš„å®¶æ—å…³ç³»å·²å­˜åœ¨ï¼é‡æ–°å»ºç«‹è¯·æŒ‰â€œYâ€,ç›´æ¥æ‰“å¼€è¯·æŒ‰â€œNâ€\n",familyname);
         ch=getchar();
-        getchar();            /* ½ÓÊÕ»Ø³µ*/
+        getchar();            /* æ¥æ”¶å›è½¦*/
         if(ch=='N'||ch=='n')
         {
-            t=Open(familyname);/* Ö±½Ó´ò¿ª*/
+            t=Open(familyname);/* ç›´æ¥æ‰“å¼€*/
             return t;
         }
     }
-    if(!fp||ch=='Y'||ch=='y')    /* ÖØĞÂ½¨Á¢£¬Ö´ĞĞÒÔÏÂ²Ù×÷*/
+    if(!fp||ch=='Y'||ch=='y')    /* é‡æ–°å»ºç«‹ï¼Œæ‰§è¡Œä»¥ä¸‹æ“ä½œ*/
     {
-        fp=fopen(fname,"w");      /* ÒÔĞ´Èë·½Ê½´ò¿ªÎÄ¼ş£¬²»´æÔÚÔòĞÂ½¨*/
-        printf("Çë°´²ã´ÎÊäÈë½áµã£¬Ã¿¸ö½áµãĞÅÏ¢Õ¼Ò»ĞĞ\n");
-        printf("ĞÖµÜÊäÈë½áÊøÒÔ¡°@¡±Îª±êÖ¾£¬½áÊø±êÖ¾Îª¡°#¡±\nÇëÊäÈë¼Ò×åµÄ×æÏÈ:");
+        fp=fopen(fname,"w");      /* ä»¥å†™å…¥æ–¹å¼æ‰“å¼€æ–‡ä»¶ï¼Œä¸å­˜åœ¨åˆ™æ–°å»º*/
+        printf("è¯·æŒ‰å±‚æ¬¡è¾“å…¥ç»“ç‚¹ï¼Œæ¯ä¸ªç»“ç‚¹ä¿¡æ¯å ä¸€è¡Œ\n");
+        printf("å…„å¼Ÿè¾“å…¥ç»“æŸä»¥â€œ@â€ä¸ºæ ‡å¿—ï¼Œç»“æŸæ ‡å¿—ä¸ºâ€œ#â€\nè¯·è¾“å…¥å®¶æ—çš„ç¥–å…ˆ:");
         gets(str);
         fputs(str,fp);
         fputc('\n',fp);
-        strcpy(family[i],str);  /* ½«³ÉÔ±ĞÅÏ¢´æ´¢µ½×Ö·ûÊı×éÖĞ*/
-        i++;                      /* familyÊı×éÏÂ±êºóÒÆ*/
+        strcpy(family[i],str);  /* å°†æˆå‘˜ä¿¡æ¯å­˜å‚¨åˆ°å­—ç¬¦æ•°ç»„ä¸­*/
+        i++;                      /* familyæ•°ç»„ä¸‹æ ‡åç§»*/
         while(str[0]!='#')
         {
-            printf("ÇëÊäÈë¼Ò×å³ÉÔ±:");      /* ÒÔµãÌáÊ¾·ûÌáÊ¾¼ÌĞøÊäÈë*/
+            printf("è¯·è¾“å…¥å®¶æ—æˆå‘˜:");      /* ä»¥ç‚¹æç¤ºç¬¦æç¤ºç»§ç»­è¾“å…¥*/
             gets(str);
-            fputs(str,fp);    /* Ğ´µ½ÎÄ¼şÖĞ£¬Ã¿¸öĞÅÏ¢Õ¼Ò»ĞĞ*/
+            fputs(str,fp);    /* å†™åˆ°æ–‡ä»¶ä¸­ï¼Œæ¯ä¸ªä¿¡æ¯å ä¸€è¡Œ*/
             fputc('\n',fp);
-            strcpy(family[i],str);/* ½«³ÉÔ±ĞÅÏ¢´æ´¢µ½×Ö·ûÊı×éÖĞ*/
-            i++;                  /* familyÊı×éÏÂ±êºóÒÆ*/
+            strcpy(family[i],str);/* å°†æˆå‘˜ä¿¡æ¯å­˜å‚¨åˆ°å­—ç¬¦æ•°ç»„ä¸­*/
+            i++;                  /* familyæ•°ç»„ä¸‹æ ‡åç§»*/
         }
-        fclose(fp);              /* ¹Ø±ÕÎÄ¼ş*/
-        t=TriTreeCreate();  /* ¸ù¾İfamilyÊı×éĞÅÏ¢´´½¨Èı²æÊ÷*/
-        printf("¼Ò×å¹ØÏµÒÑ³É¹¦½¨Á¢£¡\n");
-        return t;                /* ·µ»ØÊ÷*/
+        fclose(fp);              /* å…³é—­æ–‡ä»¶*/
+        t=TriTreeCreate();  /* æ ¹æ®familyæ•°ç»„ä¿¡æ¯åˆ›å»ºä¸‰å‰æ ‘*/
+        printf("å®¶æ—å…³ç³»å·²æˆåŠŸå»ºç«‹ï¼\n");
+        return t;                /* è¿”å›æ ‘*/
     }
 }
 void PreOrder(TriTree *T)
 {
-    if(T&&T->data[0]!='\0')
+    if(T)
     {
         printf("%s ",T->data);
         PreOrder(T->lchild);
@@ -56,55 +146,55 @@ void PreOrder(TriTree *T)
 TriTree *TriTreeCreate()
 {
     TriTree *t,*x=NULL,*tree,*root=NULL;
-    LinkQueue *q=LQueueCreateEmpty();/* ½¨Á¢Ò»¸ö¿ÕµÄ¶ÓÁĞ£¬´æ´¢Ö¸ÏòÊ÷µÄÖ¸Õë*/
+    LinkQueue *q=LQueueCreateEmpty();/* å»ºç«‹ä¸€ä¸ªç©ºçš„é˜Ÿåˆ—ï¼Œå­˜å‚¨æŒ‡å‘æ ‘çš„æŒ‡é’ˆ*/
     int i=0,flag=0,start=0;
-    DataType str[MAXNUM];      /* ´æ·ÅfamilyÊı×éÖĞĞÅÏ¢*/
-    strcpy(str,family[i]);          /* ¸´ÖÆ*/
-    i++;                            /* familyÊı×éÏÂ±êºóÒÆ*/
-    while(str[0]!='#')            /* Ã»Óöµ½½áÊø±êÖ¾¼ÌĞøÑ­»·*/
+    DataType str[MAXNUM];      /* å­˜æ”¾familyæ•°ç»„ä¸­ä¿¡æ¯*/
+    strcpy(str,family[i]);          /* å¤åˆ¶*/
+    i++;                            /* familyæ•°ç»„ä¸‹æ ‡åç§»*/
+    while(str[0]!='#')            /* æ²¡é‡åˆ°ç»“æŸæ ‡å¿—ç»§ç»­å¾ªç¯*/
     {
-        while(str[0]!='@')    /* Ã»Óöµ½ĞÖµÜÊäÈë½áÊø±êÖ¾¼ÌĞø*/
+        while(str[0]!='@')    /* æ²¡é‡åˆ°å…„å¼Ÿè¾“å…¥ç»“æŸæ ‡å¿—ç»§ç»­*/
         {
-            if(root==NULL)          /* ¿ÕÊ÷*/
+            if(root==NULL)          /* ç©ºæ ‘*/
             {
-                root=(TriTree *)malloc(sizeof(TriTree));/* ÉêÇë¿Õ¼ä*/
+                root=(TriTree *)malloc(sizeof(TriTree));/* ç”³è¯·ç©ºé—´*/
                 strcpy(root->data,str);
                 root->parent=NULL;
                 root->lchild=NULL;
                 root->rchild=NULL;
-                LQueueEnQueue(q,root);                    /* ½«root´æÈë¶ÓÁĞ*/
+                LQueueEnQueue(q,root);                    /* å°†rootå­˜å…¥é˜Ÿåˆ—*/
                 tree=root;
             }
-            else                              /* ²»Îª¿ÕÊ÷*/
+            else                              /* ä¸ä¸ºç©ºæ ‘*/
             {
-                t=(TriTree *)malloc(sizeof(TriTree)); /* ÉêÇë¿Õ¼ä*/
+                t=(TriTree *)malloc(sizeof(TriTree)); /* ç”³è¯·ç©ºé—´*/
                 strcpy(t->data,str);
                 t->lchild=NULL;
                 t->rchild=NULL;
-                t->parent=LQueueGetFront(q);        /* µ±Ç°½áµãµÄË«Ç×Îª¶ÓÍ·ÔªËØ*/
-                LQueueEnQueue(q,t);                /* Èë¶Ó*/
-                if(!flag)      /* flagÎª0£¬µ±Ç°½áµãÃ»ÓĞ×óº¢×Ó*/
+                t->parent=LQueueGetFront(q);        /* å½“å‰ç»“ç‚¹çš„åŒäº²ä¸ºé˜Ÿå¤´å…ƒç´ */
+                LQueueEnQueue(q,t);                /* å…¥é˜Ÿ*/
+                if(!flag)      /* flagä¸ºï¼Œå½“å‰ç»“ç‚¹æ²¡æœ‰å·¦å­©å­*/
                     root->lchild=t;
-                else        /* flagÎª1£¬µ±Ç°½áµãÒÑÓĞ×óº¢×Ó*/
+                else        /* flagä¸ºï¼Œå½“å‰ç»“ç‚¹å·²æœ‰å·¦å­©å­*/
                     root->rchild=t;
-                root=t;                /* rootÖ¸ÏòĞÂµÄ½áµãt */
+                root=t;                /* rootæŒ‡å‘æ–°çš„ç»“ç‚¹t */
             }
-            flag=1;            /* ±ê¼Çµ±Ç°½áµãÒÑÓĞ×óº¢×Ó*/
+            flag=1;            /* æ ‡è®°å½“å‰ç»“ç‚¹å·²æœ‰å·¦å­©å­*/
             strcpy(str,family[i]);
             i++;
         }
-        if(start!=0)              /* ±ê¼Ç²»ÊÇµÚÒ»´Î³öÏÖ¡°@¡±*/
+        if(start!=0)              /* æ ‡è®°ä¸æ˜¯ç¬¬ä¸€æ¬¡å‡ºç°â€œ@â€*/
         {
-            LQueueDeQueue(q,x);              /* ³ö¶Ó*/
+            LQueueDeQueue(q,x);              /* å‡ºé˜Ÿ*/
             if(q->front!=NULL)
-                root=LQueueGetFront(q);/* rootÎª¶ÓÍ·ÔªËØ*/
+                root=LQueueGetFront(q);/* rootä¸ºé˜Ÿå¤´å…ƒç´ */
         }
-        start=1;                      /* ±ê¼ÇÒÑ³öÏÖ¹ı¡°@¡±*/
-        flag=0;              /* ¡°@¡±ºóÃæµÄ½áµãÒ»¶¨Îª×óº¢×Ó*/
+        start=1;                      /* æ ‡è®°å·²å‡ºç°è¿‡â€œ@â€*/
+        flag=0;              /* â€œ@â€åé¢çš„ç»“ç‚¹ä¸€å®šä¸ºå·¦å­©å­*/
         strcpy(str,family[i]);
         i++;
     }
-    return tree;                        /* ·µ»ØÊ÷*/
+    return tree;                        /* è¿”å›æ ‘*/
 }
 TriTree *Open(DataType familyname[MAXNUM])
 {
@@ -112,36 +202,36 @@ TriTree *Open(DataType familyname[MAXNUM])
     DataType ch;
     FILE *fp;
     TriTree *t;
-    strcpy(fname,familyname);  /* ÒÔ¼Ò×åÃûÎªÎÄ±¾ÎÄ¼şÃû´æ´¢*/
+    strcpy(fname,familyname);  /* ä»¥å®¶æ—åä¸ºæ–‡æœ¬æ–‡ä»¶åå­˜å‚¨*/
     strcat(fname,".txt");
-    fp=fopen(fname,"r");            /* ÒÔ¶ÁÈ¡·½Ê½´ò¿ªÎÄ¼ş*/
-    if(fp==NULL)                    /* ÎÄ¼ş²»´æÔÚ*/
+    fp=fopen(fname,"r");            /* ä»¥è¯»å–æ–¹å¼æ‰“å¼€æ–‡ä»¶*/
+    if(fp==NULL)                    /* æ–‡ä»¶ä¸å­˜åœ¨*/
     {
-        printf("%s µÄ¼Ò×å¹ØÏµ²»´æÔÚ£¡\n",familyname);
+        printf("%s çš„å®¶æ—å…³ç³»ä¸å­˜åœ¨ï¼\n",familyname);
         return NULL;
     }
     else
     {
-        ch=fgetc(fp);              /* °´×Ö·û¶ÁÈ¡ÎÄ¼ş*/
-        while(ch!=EOF)            /* ¶Áµ½ÎÄ¼şÎ²½áÊø*/
+        ch=fgetc(fp);              /* æŒ‰å­—ç¬¦è¯»å–æ–‡ä»¶*/
+        while(ch!=EOF)            /* è¯»åˆ°æ–‡ä»¶å°¾ç»“æŸ*/
         {
-            if(ch!='\n')        /* ch²»ÎªÒ»¸ö½áµãĞÅÏ¢µÄ½áÎ²*/
+            if(ch!='\n')        /* chä¸ä¸ºä¸€ä¸ªç»“ç‚¹ä¿¡æ¯çš„ç»“å°¾*/
             {
-                family[i][j]=ch;  /* ½«ÎÄ¼şĞÅÏ¢´æ´¢µ½familyÊı×éÖĞ*/
+                family[i][j]=ch;  /* å°†æ–‡ä»¶ä¿¡æ¯å­˜å‚¨åˆ°familyæ•°ç»„ä¸­*/
                 j++;
             }
             else
             {
-                family[i][j]='\0';    /* ×Ö·û´®½áÊø±êÖ¾*/
-                i++;              /* familyÊı×éĞĞÏÂ±êºóÒÆ*/
-                j=0;              /* familyÊı×éÁĞÏÂ±ê¹éÁã*/
+                family[i][j]='\0';    /* å­—ç¬¦ä¸²ç»“æŸæ ‡å¿—*/
+                i++;              /* familyæ•°ç»„è¡Œä¸‹æ ‡åç§»*/
+                j=0;              /* familyæ•°ç»„åˆ—ä¸‹æ ‡å½’é›¶*/
             }
-            ch=fgetc(fp);        /* ¼ÌĞø¶ÁÈ¡ÎÄ¼şĞÅÏ¢*/
+            ch=fgetc(fp);        /* ç»§ç»­è¯»å–æ–‡ä»¶ä¿¡æ¯*/
         }
-        fclose(fp);              /* ¹Ø±ÕÎÄ¼ş*/
-        t=TriTreeCreate();  /* µ÷ÓÃº¯Êı½¨Á¢Èı²æÁ´±í*/
-        printf("¼Ò×å¹ØÏµÒÑ³É¹¦´ò¿ª£¡\n");
-        printf("ÆäÏÈĞò±éÀú½á¹ûÎª:\n");
+        fclose(fp);              /* å…³é—­æ–‡ä»¶*/
+        t=TriTreeCreate();  /* è°ƒç”¨å‡½æ•°å»ºç«‹ä¸‰å‰é“¾è¡¨*/
+        printf("å®¶æ—å…³ç³»å·²æˆåŠŸæ‰“å¼€ï¼\n");
+        printf("å…¶å…ˆåºéå†ç»“æœä¸º:\n");
         PreOrder(t);
         printf("\n");
         return t;
@@ -150,14 +240,14 @@ TriTree *Open(DataType familyname[MAXNUM])
 TriTree *Search(TriTree *t,DataType str[])
 {
     TriTree *temp;
-    if(t==NULL)                /* Èç¹ûÊ÷¿ÕÔò·µ»ØNULL */
+    if(t==NULL)                /* å¦‚æœæ ‘ç©ºåˆ™è¿”å›NULL */
         return NULL;
-    else if(strcmp(t->data,str)==0) /* Èç¹ûÕÒµ½·µ»Ø¸Ã³ÉÔ±Ö¸Õë*/
+    else if(strcmp(t->data,str)==0) /* å¦‚æœæ‰¾åˆ°è¿”å›è¯¥æˆå‘˜æŒ‡é’ˆ*/
         return t;
-    else              /* Èç¹ûÃ»ÕÒµ½±éÀú×óÓÒ×ÓÊ÷½øĞĞ²éÕÒ*/
+    else              /* å¦‚æœæ²¡æ‰¾åˆ°éå†å·¦å³å­æ ‘è¿›è¡ŒæŸ¥æ‰¾*/
     {
-        temp=Search(t->lchild,str); /* µİ¹é²éÕÒ*/
-        if(temp)                    /* ½áµã²»¿ÕÔò²éÕÒ*/
+        temp=Search(t->lchild,str); /* é€’å½’æŸ¥æ‰¾*/
+        if(temp)                    /* ç»“ç‚¹ä¸ç©ºåˆ™æŸ¥æ‰¾*/
             return(Search(t->lchild,str));
         else
             return(Search(t->rchild,str));
@@ -166,291 +256,244 @@ TriTree *Search(TriTree *t,DataType str[])
 void Append(TriTree *t)
 {
     int i=0,j,parpos=1,curpos,num,end=0,count=-1;
-    DataType chi[MAXNUM],par[MAXNUM];/* ´æ´¢ÊäÈëµÄº¢×ÓºÍÆäË«Ç×½áµã*/
+    DataType chi[MAXNUM],par[MAXNUM];/* å­˜å‚¨è¾“å…¥çš„å­©å­å’Œå…¶åŒäº²ç»“ç‚¹*/
     TriTree *tpar,*temp;
     FILE *fp;
-    printf("ÇëÊäÈëÒªÌí¼ÓµÄ³ÉÔ±:\n");
+    printf("è¯·è¾“å…¥è¦æ·»åŠ çš„æˆå‘˜:\n");
     gets(chi);
-    printf("ÇëÊäÈëÒªÌí¼Ó³ÉÔ±µÄ¸¸Ç×:");
+    printf("è¯·è¾“å…¥è¦æ·»åŠ æˆå‘˜çš„çˆ¶äº²:");        /* ä»¥ç‚¹æç¤ºç¬¦æç¤ºç»§ç»­è¾“å…¥*/
     gets(par);
-    tpar=Search(t,par);  /* ²éÕÒË«Ç×½áµãÊÇ·ñ´æÔÚ*/
+    tpar=Search(t,par);  /* æŸ¥æ‰¾åŒäº²ç»“ç‚¹æ˜¯å¦å­˜åœ¨*/
     if(!tpar)
-        printf("%s ¸Ã³ÉÔ±²»´æÔÚ£¡\n");
-    else                /* ´æÔÚÔòÌí¼ÓÆäº¢×Ó*/
+        printf("%s è¯¥æˆå‘˜ä¸å­˜åœ¨ï¼\n");
+    else                /* å­˜åœ¨åˆ™æ·»åŠ å…¶å­©å­*/
     {
-        temp=(TriTree *)malloc(sizeof(TriTree));/* ÉêÇë¿Õ¼ä*/
+        temp=(TriTree *)malloc(sizeof(TriTree));/* ç”³è¯·ç©ºé—´*/
         temp->parent=tpar;
         strcpy(temp->data,chi);
-        temp->lchild=NULL;        /* ĞÂ½áµã×óÓÒº¢×ÓÖÃ¿Õ*/
+        temp->lchild=NULL;        /* æ–°ç»“ç‚¹å·¦å³å­©å­ç½®ç©º*/
         temp->rchild=NULL;
-        if(tpar->lchild)                    /* ³ÉÔ±´æÔÚ×óº¢×Ó*/
+        if(tpar->lchild)                    /* æˆå‘˜å­˜åœ¨å·¦å­©å­*/
         {
-            tpar=tpar->lchild; /* ±éÀúµ±Ç°³ÉÔ±×óº¢×ÓµÄÓÒ×ÓÊ÷*/
-            while(tpar->rchild)          /* µ±Ç°½áµãÓÒº¢×Ó´æÔÚ*/
-                tpar=tpar->rchild;        /* ¼ÌĞø±éÀúÓÒº¢×Ó*/
-            tpar->rchild=temp;                /* ½«ĞÂ½áµãÌí¼Óµ½ËùÓĞº¢×ÓÖ®ºó*/
+            tpar=tpar->lchild; /* éå†å½“å‰æˆå‘˜å·¦å­©å­çš„å³å­æ ‘*/
+            while(tpar->rchild)          /* å½“å‰ç»“ç‚¹å³å­©å­å­˜åœ¨*/
+                tpar=tpar->rchild;        /* ç»§ç»­éå†å³å­©å­*/
+            tpar->rchild=temp;                /* å°†æ–°ç»“ç‚¹æ·»åŠ åˆ°æ‰€æœ‰å­©å­ä¹‹å*/
         }
-        else                      /* Ã»ÓĞº¢×ÓÔòÖ±½ÓÌí¼Ó*/
+        else                      /* æ²¡æœ‰å­©å­åˆ™ç›´æ¥æ·»åŠ */
             tpar->lchild=temp;
-        fp=fopen(fname,"w");        /* ÒÔĞ´Èë·½Ê½´ò¿ªÎÄ¼ş*/
+        fp=fopen(fname,"w");        /* ä»¥å†™å…¥æ–¹å¼æ‰“å¼€æ–‡ä»¶*/
         if(fp)
         {
             while(strcmp(par,family[i])!=0&&family[i][0]!='#')
             {
-                if(family[i][0]!='@')        /* ²éÕÒË«Ç×ÔÚÊı×éÖĞÎ»ÖÃ*/
-                    parpos++;                /* parpos¼ÆÊı*/
-                i++;              /* familyÊı×éĞĞÏÂ±êºóÒÆ*/
+                if(family[i][0]!='@')        /* æŸ¥æ‰¾åŒäº²åœ¨æ•°ç»„ä¸­ä½ç½®*/
+                    parpos++;                /* parposè®¡æ•°*/
+                i++;              /* familyæ•°ç»„è¡Œä¸‹æ ‡åç§»*/
             }
-            i=0;                    /* familyÊı×éĞĞÏÂ±ê¹é0*/
+            i=0;                    /* familyæ•°ç»„è¡Œä¸‹æ ‡å½’*/
             while(family[i][0]!='#')
             {
-                if(family[i][0]=='@')        /* ²éÕÒ¡°@¡±µÄ¸öÊı£¬µÚÒ»¸ö²»¼Æ*/
-                    count++;              /* countÀÛ¼Ó¸öÊı*/
-                if(count==parpos)            /* ËµÃ÷´Ë¡°@¡±ÓëÆäÇ°Ò»¸ö¡°@¡±Ö®Ç°ÎªparµÄº¢×Ó*/
-                    curpos=i;            /* curpos¼Æµ±Ç°Î»ÖÃ*/
-                i++;              /* familyÊı×éĞĞÏÂ±êºóÒÆ*/
+                if(family[i][0]=='@')        /* æŸ¥æ‰¾â€œ@â€çš„ä¸ªæ•°ï¼Œç¬¬ä¸€ä¸ªä¸è®¡*/
+                    count++;              /* countç´¯åŠ ä¸ªæ•°*/
+                if(count==parpos)            /* è¯´æ˜æ­¤â€œ@â€ä¸å…¶å‰ä¸€ä¸ªâ€œ@â€ä¹‹å‰ä¸ºparçš„å­©å­*/
+                    curpos=i;            /* curposè®¡å½“å‰ä½ç½®*/
+                i++;              /* familyæ•°ç»„è¡Œä¸‹æ ‡åç§»*/
             }
-            if(count<parpos)          /* ¡°@¡±ÊıĞ¡ÓÚparposÊı*/
+            if(count<parpos)          /* â€œ@â€æ•°å°äºparposæ•°*/
             {
-                num=parpos-count;    /* Ìí¼Ó¡°@¡±¸öÊıÎªnum */
-                for(j=i; j<=i+num; j++) /* ´ÓÊı×éÄ©Î²Ìí¼Ó¡°@¡±*/
+                num=parpos-count;    /* æ·»åŠ â€œ@â€ä¸ªæ•°ä¸ºnum */
+                for(j=i; j<=i+num; j++) /* ä»æ•°ç»„æœ«å°¾æ·»åŠ â€œ@â€*/
                     strcpy(family[j],"@\0");
-                strcpy(family[i+num+1],"#\0");/* ¡°#¡±ÒÆµ½Êı×éÄ©Î²*/
-                strcpy(family[i+num-1],chi);  /* ÔÚ×îºóÒ»¸ö¡°@¡±Ç°Ìí¼ÓĞÂ³ÉÔ±*/
-                end=1;              /* endÎªÊ±±ê¼ÇÒÑÌí¼Ó*/
+                strcpy(family[i+num+1],"#\0");/* â€œ#â€ç§»åˆ°æ•°ç»„æœ«å°¾*/
+                strcpy(family[i+num-1],chi);  /* åœ¨æœ€åä¸€ä¸ªâ€œ@â€å‰æ·»åŠ æ–°æˆå‘˜*/
+                end=1;              /* endä¸ºæ—¶æ ‡è®°å·²æ·»åŠ */
             }
             else
             {
-                for(j=i; j>=curpos; j--)      /* µ±Ç°Î»ÖÃµ½Êı×é×îºóµÄÈ«²¿ĞÅÏ¢ºóÒÆÒ»ĞĞ*/
+                for(j=i; j>=curpos; j--)      /* å½“å‰ä½ç½®åˆ°æ•°ç»„æœ€åçš„å…¨éƒ¨ä¿¡æ¯åç§»ä¸€è¡Œ*/
                     strcpy(family[j+1],family[j]);
-                strcpy(family[curpos],chi);  /* ½«ĞÂ½áµã´æ´¢µ½¡°@¡±µÄÇ°Ò»ĞĞ*/
+                strcpy(family[curpos],chi);  /* å°†æ–°ç»“ç‚¹å­˜å‚¨åˆ°â€œ@â€çš„å‰ä¸€è¡Œ*/
             }
-            if(end==1) /* ÈôendÎª£¬ÔòÊı×éÄ©Î²ÏÂ±êºóÒÆnumÎ»*/
+            if(end==1) /* è‹¥endä¸ºï¼Œåˆ™æ•°ç»„æœ«å°¾ä¸‹æ ‡åç§»numä½*/
                 i=i+num;
-            for(j=0; j<=i+1; j++) /* ½«Êı×éËùÓĞĞÅÏ¢Ğ´ÈëÎÄ¼ş*/
+            for(j=0; j<=i+1; j++) /* å°†æ•°ç»„æ‰€æœ‰ä¿¡æ¯å†™å…¥æ–‡ä»¶*/
             {
                 fputs(family[j],fp);
-                fputc('\n',fp);            /* Ò»¸öĞÅÏ¢´æÒ»ĞĞ*/
+                fputc('\n',fp);            /* ä¸€ä¸ªä¿¡æ¯å­˜ä¸€è¡Œ*/
             }
-            fclose(fp);                      /* ¹Ø±ÕÎÄ¼ş*/
-            printf("Ìí¼ÓĞÂ³ÉÔ±³É¹¦£¡\n");
+            fclose(fp);                      /* å…³é—­æ–‡ä»¶*/
+            printf("æ·»åŠ æ–°æˆå‘˜æˆåŠŸï¼\n");
         }
         else
-            printf("Ìí¼ÓĞÂ³ÉÔ±Ê§°Ü£¡\n");
+            printf("æ·»åŠ æ–°æˆå‘˜å¤±è´¥ï¼\n");
     }
 }
-void Ancesstor(TriTree *t)            /* ²éÕÒ³ÉÔ±ËùÓĞ×æÏÈ*/
+void Ancesstor(TriTree *t)            /* è¿”å›æ ‘çš„æ ¹ç»“ç‚¹ä¿¡æ¯*/
 {
-    if(t->parent==NULL)
-        printf("%s³ÉÔ±ÎŞ×æÏÈ",t->data);
-    else
-    {
-        printf("%sµÄ×æÏÈÎª£º",t->data);
-        while(t->parent!=NULL)
-        {
-            printf("%s ",t->parent->data);
-            t=t->parent;
-        }
-    }
+    printf("è¯¥å®¶æ—çš„ç¥–å…ˆä¸º%s\n",t->data);
 }
 void Parent(TriTree *t)
 {
-    if(t->parent!=NULL)  /* Èô¸Ã³ÉÔ±Îª×æÏÈ£¬ÔòÎŞË«Ç×*/
-        printf("%s µÄË«Ç×Îª%s\n",t->data,t->parent->data);
+    if(t->parent!=NULL)  /* è‹¥è¯¥æˆå‘˜ä¸ºç¥–å…ˆï¼Œåˆ™æ— åŒäº²*/
+        printf("%s çš„åŒäº²ä¸º%s\n",t->data,t->parent->data);
     else
-        printf("%s ÎŞË«Ç×£¡\n",t->data);
+        printf("%s æ— åŒäº²ï¼\n",t->data);
 }
-void Brothers(TriTree *t,DataType str[])    /* ²éÕÒĞÖµÜ*/
+void Brothers(TriTree *t,DataType str[])    /* æŸ¥æ‰¾å…„å¼Ÿ*/
 {
-    if(t->parent!=NULL)      /* Èô¸Ã½áµãÊÇ×æÏÈ£¬ÔòÎŞĞÖµÜ*/
+    if(t->parent!=NULL)      /* è‹¥è¯¥ç»“ç‚¹æ˜¯ç¥–å…ˆï¼Œåˆ™æ— å…„å¼Ÿ*/
     {
-        t=t->parent;                          /* ¸Ã½áµãµÄĞÖµÜ¼´ÎªÆäË«Ç×³ı¸Ã³ÉÔ±ÒÔÍâµÄËùÓĞº¢×Ó*/
-        if(t->lchild&&t->lchild->rchild)    /* µ±Ç°½áµãµÄ×óº¢×Ó¼°ÆäÓÒº¢×Ó¶¼´æÔÚ*/
+        t=t->parent;                          /* è¯¥ç»“ç‚¹çš„å…„å¼Ÿå³ä¸ºå…¶åŒäº²é™¤è¯¥æˆå‘˜ä»¥å¤–çš„æ‰€æœ‰å­©å­*/
+        if(t->lchild&&t->lchild->rchild)    /* å½“å‰ç»“ç‚¹çš„å·¦å­©å­åŠå…¶å³å­©å­éƒ½å­˜åœ¨*/
         {
-            printf("%s µÄËùÓĞĞÖµÜÓĞ£º",str);
+            printf("%s çš„æ‰€æœ‰å…„å¼Ÿæœ‰ï¼š",str);
             t=t->lchild;
-            while(t)            /* ±éÀúµ±Ç°³ÉÔ±×óº¢×ÓµÄÓÒ×ÓÊ÷*/
+            while(t)            /* éå†å½“å‰æˆå‘˜å·¦å­©å­çš„å³å­æ ‘*/
             {
-                if(strcmp(t->data,str)!=0)  /* ±éÀúÓÒ×ÓÊ÷£¬Ñ¡ÔñÊä³ö*/
-                    printf("%s  ",t->data); /* ·ÃÎÊµ±Ç°½áµã*/
+                if(strcmp(t->data,str)!=0)  /* éå†å³å­æ ‘ï¼Œé€‰æ‹©è¾“å‡º*/
+                    printf("%s  ",t->data); /* è®¿é—®å½“å‰ç»“ç‚¹*/
                 t=t->rchild;
             }
             printf("\n");
         }
         else
-            printf("%s ÎŞĞÖµÜ£¡\n",str);
+            printf("%s æ— å…„å¼Ÿï¼\n",str);
     }
     else
-        printf("%s ÎŞĞÖµÜ£¡\n",str);
+        printf("%s æ— å…„å¼Ÿï¼\n",str);
 }
-void Children(TriTree *t)          /* ±éÀú×óº¢×Ó*/
+void Children(TriTree *t)          /* éå†å·¦å­©å­*/
 {
-    if(t->lchild)                  /* µ±Ç°½áµã´æÔÚ×óº¢×Ó*/
+    if(t->lchild)                  /* å½“å‰ç»“ç‚¹å­˜åœ¨å·¦å­©å­*/
     {
-        printf("%s µÄËùÓĞº¢×ÓÓĞ£º",t->data);
-        t=t->lchild;        /* ±éÀúµ±Ç°³ÉÔ±×óº¢×ÓµÄÓÒ×ÓÊ÷*/
-        while(t)                  /* ²»¿Õ*/
+        printf("%s çš„æ‰€æœ‰å­©å­æœ‰ï¼š",t->data);
+        t=t->lchild;        /* éå†å½“å‰æˆå‘˜å·¦å­©å­çš„å³å­æ ‘*/
+        while(t)                  /* ä¸ç©º*/
         {
-            printf("%s  ",t->data);/* ·ÃÎÊµ±Ç°³ÉÔ±*/
+            printf("%s  ",t->data);/* è®¿é—®å½“å‰æˆå‘˜*/
             t=t->rchild;
         }
         printf("\n");
     }
     else
-        printf("%s ÎŞº¢×Ó£¡\n",t->data);
+        printf("%s æ— å­©å­ï¼\n",t->data);
 }
-/* ÖĞĞò±éÀúÒ»¿ÃÊ÷*/
+/* ä¸­åºéå†ä¸€æ£µæ ‘*/
 void InOrder(TriTree *t)
 {
-    if(t)                      /* ¶ş²æÊ÷´æÔÚ*/
+    if(t)                      /* äºŒå‰æ ‘å­˜åœ¨*/
     {
-        InOrder(t->lchild);    /* ÖĞĞò±éÀú×ó×ÓÊ÷*/
-        printf("%s  ",t->data);/* ·ÃÎÊ³ÉÔ±*/
-        InOrder(t->rchild);    /* ÖĞĞò±éÀúÓÒ×ÓÊ÷*/
+        InOrder(t->lchild);    /* ä¸­åºéå†å·¦å­æ ‘*/
+        printf("%s  ",t->data);/* è®¿é—®æˆå‘˜*/
+        InOrder(t->rchild);    /* ä¸­åºéå†å³å­æ ‘*/
     }
 }
-void Descendants(TriTree *t)  /* ±éÀú×óº¢×Ó*/
+void Descendants(TriTree *t)  /* éå†å·¦å­©å­*/
 {
-    if(t->lchild)              /* µ±Ç°½áµã´æÔÚ×óº¢×Ó*/
+    if(t->lchild)              /* å½“å‰ç»“ç‚¹å­˜åœ¨å·¦å­©å­*/
     {
-        printf("%sµÄËùÓĞ×ÓËïºó´úÓĞ£º",t->data);
-        InOrder(t->lchild);  /* ÖĞĞò±éÀúµ±Ç°½áµãµÄ×óÓÒ×ÓÊ÷*/
+        printf("%s çš„æ‰€æœ‰å­å­™åä»£æœ‰ï¼š",t->data);
+        InOrder(t->lchild);  /* ä¸­åºéå†å½“å‰ç»“ç‚¹çš„å·¦å³å­æ ‘*/
         printf("\n");
     }
     else
-        printf("%sÎŞºó´ú£¡\n",t->data);
-}
-void Print()
-{
-    printf("Ã¿Ò»´úÈËµÄ·Ö²¼ÈçÏÂ:\n");
-    int i=0;
-    while(family[i][0]!='#')
-    {
-        if(family[i][0]!='@')
-            printf("%s ",family[i]);
-        else
-            printf("\n");
-            i++;
-    }
-}
-void Correct(TriTree *T)//ĞŞ¸Ä¼Ò×å³ÉÔ±µÄĞÅÏ¢
-{
-    int tag;
-    FILE *fp;
-    fp=fopen(fname,"w");
-    int i=0;
-    if(fp)
-    {
-        while(strcmp(T->data,family[i])!=0)
-        {
-            i++;
-            tag=i;
-        }
-        i=0;
-        family[tag][0]='\0';
-        DataType newname[MAXNUM];
-        printf("ÇëÊäÈëÕıÈ·µÄĞŞ¸ÄĞÅÏ¢:\n");
-        gets(newname);
-        strcpy(family[tag],newname);
-        for(int j=0;j<100; j++) /* ½«Êı×éËùÓĞĞÅÏ¢Ğ´ÈëÎÄ¼ş*/
-        {
-            fputs(family[j],fp);
-            fputc('\n',fp);            /* Ò»¸öĞÅÏ¢´æÒ»ĞĞ*/
-        }
-         fclose(fp);
-    }
-    printf("ÒÑĞŞ¸Ä³É¹¦!\n");
-}
-void Delete(TriTree *T,DataType name[MAXNUM])
-{
-
-    TriTree *s=Search(T,name);
-    s->data[0]='\0';
-    printf("É¾³ı³É¹¦£¡\n");
-    printf("ÆäÏÈĞò±éÀúÎª£º\n");
-    PreOrder(T);
-    printf("\n");
-
+        printf("%s æ— åä»£ï¼\n",t->data);
 }
 int main()
 {
-    DataType str[MAXNUM];
-    int flag,start=0;
+    DataType str[MAXNUM]="\0",input[40];
+    int i,j,flag,start=0,pos,tag1,tag2;
     TriTree *temp,*tree=NULL;
     while(1)
     {
-		printf("\t\t*********************************************************\n");
-        printf("\t\t|*               »¶Ó­Ê¹ÓÃ¼Ò×å¹ØÏµ²éÑ¯ÏµÍ³£¡             *|\n");
-        printf("\t\t|*                   ÇëÊäÈë(1-10)                       *|\n");
-        printf("\t\t|*            1. ĞÂ½¨Ò»¸ö¼ÒÍ¥¹ØÏµ                       *|\n");
-        printf("\t\t|*            2. ´ò¿ªÒ»¸ö¼ÒÍ¥¹ØÏµ                       *|\n");
-        printf("\t\t|*            3. Ìí¼ÓĞÂ³ÉÔ±µÄĞÅÏ¢                       *|\n");
-        printf("\t\t|*            4. ²éÕÒÒ»¸ö³ÉÔ±µÄ×æÏÈ                     *|\n");
-        printf("\t\t|*            5. ²éÕÒÒ»¸ö³ÉÔ±µÄË«Ç×                     *|\n");
-        printf("\t\t|*            6. ²éÕÒÒ»¸ö³ÉÔ±µÄĞÖµÜ                     *|\n");
-        printf("\t\t|*            7. ²éÕÒÒ»¸ö³ÉÔ±µÄº¢×Ó                     *|\n");
-        printf("\t\t|*            8. ²éÕÒÒ»¸ö³ÉÔ±µÄ×ÓËïºó´ú                 *|\n");
-        printf("\t\t|*            9. ĞŞ¸Ä¼ÒÍ¥³ÉÔ±µÄĞÅÏ¢                     *|\n ");
-		printf("\t\t|*            10.É¾³ı¼Ò×å³ÉÔ±                           *|\n");
-		printf("\t\t|*            11.ÍË³öÏµÍ³                               *|\n");
-		printf("\t\t*********************************************************\n");
-		printf("\t\tÇëÊäÈëÄãµÄÑ¡Ôñ:\n");
-		scanf("%d",&flag);
-        if(flag==1)
-            printf("ÇëÊäÈëÒª½¨Á¢µÄ¼Ò×å:\n");
-        if(flag==2)
-            printf("ÇëÊäÈëÒª´ò¿ªµÄ¼Ò×å:\n");
-        if(flag==3)
-            printf("ÇëÊäÈëÌí¼Ó³ÉÔ±µÄ¼Ò×å:\n");
-        if(flag==4)
-            printf("ÇëÊäÈëÒª²éÕÒ×æÏÈµÄ³ÉÔ±:\n");
-        if(flag==5)
-            printf("ÇëÊäÈëÒª²éÕÒË«Ç×µÄ³ÉÔ±:\n");
-        if(flag==6)
-            printf("ÇëÊäÈëÒª²éÕÒÆäĞÖµÜµÄ³ÉÔ±:\n");
-        if(flag==7)
-            printf("ÇëÊäÈëÒª²éÕÒÆäº¢×ÓµÄ³ÉÔ±\n");
-        if(flag==8)
-            printf("ÇëÊäÈëÒª²éÕÒÆä×ÓËïºó´úµÄ³ÉÔ±:\n");
-        if(flag==9)
-            printf("ÇëÊäÈëÒªĞŞ¸ÄµÄ³ÉÔ±:\n");
-        if(flag==10)
-            printf("ÇëÊäÈëÒªÉ¾³ıµÄ´íÎóĞÅÏ¢µÄ³ÉÔ±£º\n");
-        if(flag==11)
-          printf("Ğ»Ğ»±¾´ÎÊ¹ÓÃ¼Ò×å¹ØÏµ´¦ÀíÏµÍ³!");
-		fflush(stdin);
-        gets(str);
-        if(!(flag==1||flag==2||flag==11)&&start==0)
+		printf("\t*****************************************************************\n");
+        printf("\t|*                æ¬¢è¿ä½¿ç”¨å®¶æ—å…³ç³»æŸ¥è¯¢ç³»ç»Ÿï¼                   *|\n");
+        printf("\t|*         è¯·è¾“å…¥ä¸ä¹‹åŒ¹é…çš„å‡½æ•°å’Œå‚æ•°ï¼Œå¦‚parent(C)             *|\n");
+        printf("\t|* 1.æ–°å»ºä¸€ä¸ªå®¶åº­å…³ç³»ï¼š      Create(familyname)   å‚æ•°ä¸ºå­—ç¬¦ä¸² *|\n");
+        printf("\t|* 2.æ‰“å¼€ä¸€ä¸ªå®¶åº­å…³ç³»ï¼š      Open(familyname)     å‚æ•°ä¸ºå­—ç¬¦ä¸² *|\n");
+        printf("\t|* 3.æ·»åŠ æ–°æˆå‘˜çš„ä¿¡æ¯ï¼š      Append()             æ— å‚æ•°       *|\n");
+        printf("\t|* 4.æŸ¥æ‰¾ä¸€ä¸ªæˆå‘˜çš„ç¥–å…ˆï¼š    Ancesstor(name)      å‚æ•°ä¸ºå­—ç¬¦ä¸² *|\n");
+        printf("\t|* 5.æŸ¥æ‰¾ä¸€ä¸ªæˆå‘˜çš„åŒäº²ï¼š    Parent(name)         å‚æ•°ä¸ºå­—ç¬¦ä¸² *|\n");
+        printf("\t|* 6.æŸ¥æ‰¾ä¸€ä¸ªæˆå‘˜çš„å…„å¼Ÿï¼š    Brothers(name)       å‚æ•°ä¸ºå­—ç¬¦ä¸² *|\n");
+        printf("\t|* 7.æŸ¥æ‰¾ä¸€ä¸ªæˆå‘˜çš„å­©å­ï¼š    Children(name)       å‚æ•°ä¸ºå­—ç¬¦ä¸² *|\n");
+        printf("\t|* 8.æŸ¥æ‰¾ä¸€ä¸ªæˆå‘˜çš„å­å­™åä»£ï¼šDescendants(name)    å‚æ•°ä¸ºå­—ç¬¦ä¸² *|\n");
+        printf("\t|* 9.é€€å‡ºç³»ç»Ÿï¼š              exit()               æ— å‚æ•°       *|\n ");
+		printf("\t*****************************************************************\n");
+        gets(input);        /* inputæ•°ç»„å­˜æ”¾è¾“å…¥çš„å‡½æ•°å’Œå‚æ•°*/
+        j=0,tag1=0,tag2=0;
+        for(i=0; i<strlen(input); i++) /* å¾ªç¯inputæ•°ç»„*/
         {
-            /* Èç¹ûµÚÒ»´ÎÊäÈëº¯Êı²»ÊÇ½¨Á¢¡¢´ò¿ª»òÍË³ö£¬ÔòÖØĞÂÊäÈë*/
-            printf("\tÇëÏÈ½¨Á¢»ò´ò¿ªÒ»¸ö¼Ò×å¹ØÏµ£¡\n");
+            if(input[i]=='(')      /* å·¦æ‹¬å·ä¹‹å‰ä¸ºå‡½æ•°å*/
+            {
+                pos=i;              /* posæ ‡è®°å·¦æ‹¬å·ä½ç½®*/
+                tag1=1;          /* æ ‡è®°æ˜¯å¦åŒ¹é…åˆ°å·¦æ‹¬å·*/
+            }
+            if(input[i+1]==')')    /* è‹¥ä¸‹ä¸€ä¸ªå­—ç¬¦ä¸ä¸ºå³æ‹¬å·*/
+                tag2=1;            /* æ ‡è®°ä¸º*/
+            if(tag1==1&&tag2!=1)    /* å·¦æ‹¬å·å’Œå³æ‹¬å·ä¹‹å‰ä¸ºå‚æ•°*/
+            {
+                str[j]=input[i+1];/* å°†å‚æ•°å­˜æ”¾åˆ°stræ•°ç»„*/
+                j++;                  /* å¹¶è½¬åŒ–ä¸ºå°å†™å­—æ¯*/
+            }
+            input[i]=input[i];    /* å°†å‡½æ•°åè½¬åŒ–ä¸ºå°å†™å­—æ¯*/
+        }
+        if(!tag1)    /* è‹¥æ²¡åŒ¹é…åˆ°å·¦æ‹¬å·ï¼Œè¯´æ˜åªæœ‰å‡½æ•°æ— å‚æ•°*/
+            pos=i;        /* æ ‡è®°ä¸ºæ•°ç»„æœ«å°¾*/
+        input[pos]='\0';/* å°†æ ‡è®°ä½ç½®ä¸ºå­—ç¬¦ä¸²ç»“æŸ*/
+        str[j]='\0';
+        if(strcmp(input,"Create\0")==0)/* å‡½æ•°ååŒ¹é…*/
+            flag=1;                    /* ç”¨flagæ ‡è®°*/
+        else if(strcmp(input,"Open\0")==0)
+            flag=2;
+        else if(strcmp(input,"Append\0")==0)
+            flag=3;
+        else if(strcmp(input,"Ancesstor\0")==0)
+            flag=4;
+        else if(strcmp(input,"Parent\0")==0)
+            flag=5;
+        else if(strcmp(input,"Brothers\0")==0)
+            flag=6;
+        else if(strcmp(input,"Children\0")==0)
+            flag=7;
+        else if(strcmp(input,"Descendants\0")==0)
+            flag=8;
+        else if(strcmp(input,"exit\0")==0)
+            flag=9;
+        else                      /* æ— åŒ¹é…åˆ™é‡æ–°è¾“å…¥*/
+        {
+            printf("æ— åŒ¹é…çš„å‡½æ•°ï¼Œè¯·é‡æ–°è¾“å…¥ï¼\n");
             continue;
         }
-        start=1;                /* ±ê¼Ç²»ÊÇµÚÒ»´ÎÊäÈëinput */
-        if(flag>=4&&flag<=10&&start==1) /* º¯ÊıĞèÒª×Ö·û´®ĞÍ²ÎÊıname */
+        if(!(flag==1||flag==2||flag==9)&&start==0)
         {
-            temp=Search(tree,str);/* Èô´æÔÚÔò·µ»Ø½áµã*/
-            if(!temp)            /* Èô²»´æÔÚÔò·µ»Ø*/
+            /* å¦‚æœç¬¬ä¸€æ¬¡è¾“å…¥å‡½æ•°ä¸æ˜¯å»ºç«‹ã€æ‰“å¼€æˆ–é€€å‡ºï¼Œåˆ™é‡æ–°è¾“å…¥*/
+            printf("è¯·å…ˆå»ºç«‹æˆ–æ‰“å¼€ä¸€ä¸ªå®¶æ—å…³ç³»ï¼\n");
+            continue;
+        }
+        start=1;                /* æ ‡è®°ä¸æ˜¯ç¬¬ä¸€æ¬¡è¾“å…¥input */
+        if(flag>=4&&flag<=8) /* å‡½æ•°éœ€è¦å­—ç¬¦ä¸²å‹å‚æ•°name */
+        {
+            temp=Search(tree,str);/* è‹¥å­˜åœ¨åˆ™è¿”å›ç»“ç‚¹*/
+            if(!temp)            /* è‹¥ä¸å­˜åœ¨åˆ™è¿”å›*/
             {
-                printf("¸Ã³ÉÔ±²»´æÔÚ£¡\n");
+                printf("è¯¥æˆå‘˜ä¸å­˜åœ¨ï¼\n");
                 continue;
             }
         }
-        switch(flag)              /* ¸ù¾İflag±ê¼Çµ÷ÓÃº¯Êı*/
+        switch(flag)              /* æ ¹æ®flagæ ‡è®°è°ƒç”¨å‡½æ•°*/
         {
         case 1:
             tree=Create(str);
             break;
         case 2:
             tree=Open(str);
-            Print();
             break;
         case 3:
             Append(tree);
             break;
         case 4:
-            Ancesstor(temp);
-            printf("\n");
+            Ancesstor(tree);
             break;
         case 5:
             Parent(temp);
@@ -462,17 +505,13 @@ int main()
             Children(temp);
             break;
         case 8:
-             Descendants(temp);
+            Descendants(temp);
             break;
-		case 9:
-			Correct(temp);
-			break;
-        case 10:
-            Delete(tree,str);
-            break;
-        case 11:
-            exit(0);
+        case 9:
+            exit(OK);
         }
     }
 	return 0;
 }
+
+
